@@ -1,0 +1,77 @@
+Insert:
+#    *) if bucket/block is empty
+    // ====================== UPARXEI SIGOURA AUTH H PERIPTWSH ??? -> nomizw oxi gt shmainei oti exoume ftiaxei block gia ena ht_arrayIndex
+    // alla den to exoume balei na deixnei pou8ena. Emeis omws me to pou ftiaxnoume ena arrayIndex to bazoume kateu8eian na deixnei kapou
+    // ekfwnhsh leei ekei pou edeixne o prohgoumenos deikths me d-1 digits ====================
+    // We should handle that in HT_CreateFile
+        - create a block
+        - connect it to the ht_array
+        - and palce the record inside
+#    **) if bucket/block is NOT empty    // ====================== UPARXEI SIGOURA AUTH H PERIPTWSH ??? ====================
+
+
+
+
+
+        // Check if bucket/block has enough space for the Record
+        1) if there is enough space
+            a) place the record as last in this bucket/block
+        end 1)
+        2) if there is not enough space
+            a) allocate a new block
+            --- update ht_info total_blocks++ (gia na to xrhsimopoihsoume otan xanakaloume thn insert sto bhma 2bi ???)
+            // edw einai to duskolo
+            b) Check if more than 1 (K>1) ht_array indexes point to the FULL BLOCK (lets assume K pointers to FULL BLOCK)
+                i) if yes : ht_block_info.indexes_pointed_by > 1 && (local deapth < global_depth) // sa na elegxw to idio pragma
+                    // - Keep the (first) K/2 pointers from ht_array still pointing to the same FULL BLOCK
+                    // edw na dw ti kanoume?
+                    // - and make the other (last) K%2 point to the newly allocated block
+                    // Pick the 2nd? / last? / another pointer from the rest pointing to the same FULL BLOCK and make it point to the newly allocated block
+                    // then
+                    // pws xanabazw meta ta hdh uparxonta records (kai pws k to kainourio)?
+                    // mhpws gia osa records exei to FULL BLOCK xanakalw thn insert (se For) wste na ginoun re-hashed me th new hash_funciton
+                    // (pou kanei % perissotera buckes pleon)?
+                    - 
+                    // h pio apla (epeidh mallon to parapanw ginetai handle (dld isomoirazontai oi deiktes) sto IF NOT apo katw)
+                    - Make the CURRENT POINTER point to the newly allocated block (keeping all other K pointers pointing to same block as before)
+                    - ! FULL BLOCK -> local_depth++;
+                    - ! newly allocated block -> local_depth = FULL BLOCK -> local_depth (ananeomeno kata +1 pleon apo thn prohgoumenh grammh);
+                        (8a 8elame na kaname local_depth++, alla den exei local_depth, ara pairnoume to antistoixo tou FULL BLOCK)
+                    - for each already existing record in FULL BLOCK + Record_to_insert -> HT_InsertEntry(...) (with 1 more bucket this time)
+
+                ii) if not : ht_block_info.indexes_pointed_by == 1 && (local deapth == global_depth) // sa na elegxw to idio pragma
+                    //
+                    - old_size = hold "old" ht_arrays size
+                    - Double ht_arrays size (new_size = old_size * 2)
+                    - make sure it is stored correctly updating blocks containing the ht_array using ht_info (next_block ect.)
+                    - For (i = old_size ; i< new_size ; i++) {
+                    -   new ht_array[i] (points to block with id:) = ht_array[i - old_size]  --> ara o 1os kainourios pointer deixnei ekei pou edeixne to 0, o 2os to 1 klp, opws k to deixnei stis diafaneies
+                    - }
+                    - update each time (maybe in For above?) the ht_block_info.indexespointedBby of this block
+                    - global_depth++;
+                    - for each already existing record in FULL BLOCK + Record_to_insert -> HT_InsertEntry(...) (with 1 more bucket this time)
+            end b)
+        end 2)
+
+
+
+
+
+
+
+
+
+
+// ===================================== LA8OS ALGORI8MOS =============================================
+    // Check buckets data
+    1) if bucket has no records
+        a) Allocate first block
+        b) Place record inside the new block
+        c) Update new blocks -> next pointer // points to the next block in this bucket! (default = -1)
+    2) there is at least 1 record in this bucket
+        a) get the last block in the bucket
+        b) if there is room in this block
+            i) place the record in the first avaliable slot!
+        c) else
+            i) allocate a new block (+do whats needed, i.e. place its block number in the previous block, ...)
+            ii) palce record inside new block
